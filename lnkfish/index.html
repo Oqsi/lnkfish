@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>水墨之灵</title>
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            touch-action: none;
+            background: #fff;
+        }
+        
+        @font-face {
+            font-family: "ThaleahFat";
+            src: url("./ThaleahFat.ttf") format("truetype");
+            font-weight: normal;
+            font-style: normal;
+        }
+        
+        #canvas {
+            display: block;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100vw;
+            max-height: 100vh;
+        }
+    </style>
+    <script src="./target/js/release/build/lnkfish.js" defer></script>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        
+        // 始终使用设计尺寸,保持最佳画质
+        function calculateCanvasSize() {
+            const designWidth = 745;
+            const designHeight = 700;
+            return { width: designWidth, height: designHeight };
+        }
+        
+        function resizeCanvas() {
+            const { width, height } = calculateCanvasSize();
+            
+            // 通知游戏引擎新的Canvas尺寸
+            if (window.lnkfish && window.lnkfish.set_viewport_size) {
+                window.lnkfish.set_viewport_size(width, height);
+            }
+            
+            // 等待Canvas实际尺寸更新
+            setTimeout(function() {
+                if (canvas.width === 0 || canvas.height === 0) {
+                    resizeCanvas();
+                    return;
+                }
+                
+                const gameWidth = canvas.width;
+                const gameHeight = canvas.height;
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                const windowAspect = windowWidth / windowHeight;
+                const gameAspect = gameWidth / gameHeight;
+                
+                let newWidth, newHeight;
+                
+                if (windowAspect > gameAspect) {
+                    newHeight = windowHeight;
+                    newWidth = newHeight * gameAspect;
+                } else {
+                    newWidth = windowWidth;
+                    newHeight = newWidth / gameAspect;
+                }
+                
+                canvas.style.width = Math.floor(newWidth) + 'px';
+                canvas.style.height = Math.floor(newHeight) + 'px';
+            }, 100);
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', resizeCanvas);
+        window.addEventListener('load', resizeCanvas);
+        resizeCanvas();
+        
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            
+            // 正确的坐标转换:屏幕坐标 -> Canvas坐标
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const canvasX = (touch.clientX - rect.left) * scaleX;
+            const canvasY = (touch.clientY - rect.top) * scaleY;
+            
+            // 创建鼠标事件,使用Canvas坐标
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: canvasX,
+                clientY: canvasY,
+                button: 0,
+                bubbles: true
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+        
+        canvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {
+                button: 0
+            });
+            canvas.dispatchEvent(mouseEvent);
+        }, { passive: false });
+        
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+        
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        });
+    </script>
+</body>
+
+</html>
